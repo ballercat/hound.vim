@@ -48,7 +48,7 @@ endfunction
 function! hound#fetchResults(query_string, clean_repos)
     let sanitized_query_string = hound#encodeUrl(a:query_string)
 
-    let clean_repos = substitute(tolower(g:hound_repos), " ","","g")
+    " let clean_repos = substitute(tolower(g:hound_repos), " ","","g")
 
     let s:api_full_url = g:hound_base_url
                 \. ":" . g:hound_port
@@ -127,16 +127,28 @@ endfunction
 
 function! Hound(...) abort
 
+    " Allow for a specified custom repo
     let query_string = join(a:000)
-    let clean_repos = substitute(tolower(g:hound_repos), " ","","g")
+    let args = split(query_string)
+    let l:clean_repos = ''
+    for arg in args
+      if stridx(arg, "-r=") > -1
+        let l:clean_repos = split(arg, "=")[1]
+        let query_string = join(args[1:])
+      endif
+    endfor
+
+    if !len(l:clean_repos)
+      let l:clean_repos = substitute(tolower(g:hound_repos), " ","","g")
+    endif
 
     try
-        let response = hound#fetchResults(query_string, clean_repos)
+        let response = hound#fetchResults(query_string, l:clean_repos)
     catch
         echoerr v:exception
     endtry
 
-    let s:web_full_url = hound#buildWebUrl(query_string, clean_repos)
+    let s:web_full_url = hound#buildWebUrl(query_string, l:clean_repos)
     let s:output = s:web_full_url
 
     let repos = []
